@@ -77,6 +77,8 @@ func handleConnections(c echo.Context) error {
 		return err
 	}
 
+	messageType, _, _ :=ws.ReadMessage()
+	fmt.Println(messageType)
 	mu.Lock()
 	for _, msg := range MessageArchieve {
 		err := ws.WriteMessage(websocket.TextMessage, []byte(msg))

@@ -71,31 +71,56 @@ func clear(c echo.Context) error {
 }
 
 func handleConnections(c echo.Context) error {
-	mu := sync.Mutex{}
+
 	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
 		return err
 	}
-
-	mu.Lock()
-	for _, msg := range MessageArchieve {
-		err := ws.WriteMessage(websocket.TextMessage, []byte(msg))
-		if err != nil {
-			log.Printf("error: %v", err)
-			ws.Close()
-		}
-	}
-	clients[ws] = true
-	mu.Unlock()
+	defer ws.Close()
 
 	for {
+		// Write
+		err := ws.WriteMessage(websocket.TextMessage, []byte("Hello, Client!"))
+		if err != nil {
+			c.Logger().Error(err)
+		}
+
+		// Read
 		_, msg, err := ws.ReadMessage()
 		if err != nil {
 			c.Logger().Error(err)
-			return err
 		}
 		fmt.Printf("%s\n", msg)
 	}
+
+
+	// mu := sync.Mutex{}
+	// ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
+	// if err != nil {
+	// 	return err
+	// }
+
+
+	
+	// mu.Lock()
+	// for _, msg := range MessageArchieve {
+	// 	err := ws.WriteMessage(websocket.TextMessage, []byte(msg))
+	// 	if err != nil {
+	// 		log.Printf("error: %v", err)
+	// 		ws.Close()
+	// 	}
+	// }
+	// clients[ws] = true
+	// mu.Unlock()
+
+	// for {
+	// 	_, msg, err := ws.ReadMessage()
+	// 	if err != nil {
+	// 		c.Logger().Error(err)
+	// 		return err
+	// 	}
+	// 	fmt.Printf("%s\n", msg)
+	// }
 }
 
 func handleMessages() {

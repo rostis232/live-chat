@@ -9,6 +9,11 @@ up_build:
 	docker-compose up --build -d
 	@echo "Docker images built and started!"
 
+up:
+	@echo "Starting docker compose..."
+	docker-compose up -d
+	@echo "Done!"
+
 down:
 	@echo "Stopping docker compose..."
 	docker-compose down

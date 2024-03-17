@@ -121,7 +121,7 @@ func recieve(c echo.Context) error {
 
 	return c.HTML(200, fmt.Sprintf(`
         <div class="input-group mb-3">
-            <input type="text" name="name" id="name" class="form-control col-3" placeholder="Ім'я" value="%s" required><br>
+            <input type="text" name="name" id="name" class="form-control col-3" placeholder="Ім'я" value="%s" hidden required><br>
             <input type="text" name="text" id="text" class="form-control" placeholder="Повідомлення" required><br>
             <button type="submit" class="btn btn-outline-secondary">
                 >>

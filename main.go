@@ -77,18 +77,20 @@ func handleConnections(c echo.Context) error {
 		return err
 	}
 
+	_, ok := clients[ws]
 
-	
-	mu.Lock()
-	for _, msg := range MessageArchieve {
-		err := ws.WriteMessage(websocket.TextMessage, []byte(msg))
-		if err != nil {
-			log.Printf("error: %v", err)
-			ws.Close()
+	if !ok {
+		mu.Lock()
+		for _, msg := range MessageArchieve {
+			err := ws.WriteMessage(websocket.TextMessage, []byte(msg))
+			if err != nil {
+				log.Printf("error: %v", err)
+				ws.Close()
+			}
 		}
+		clients[ws] = true
+		mu.Unlock()
 	}
-	clients[ws] = true
-	mu.Unlock()
 	return nil
 }
 

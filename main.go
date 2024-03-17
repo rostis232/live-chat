@@ -89,15 +89,7 @@ func handleConnections(c echo.Context) error {
 	}
 	clients[ws] = true
 	mu.Unlock()
-
-	for {
-		_, msg, err := ws.ReadMessage()
-		if err != nil {
-			c.Logger().Error(err)
-			return err
-		}
-		fmt.Printf("%s\n", msg)
-	}
+	return nil
 }
 
 func handleMessages() {

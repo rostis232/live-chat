@@ -77,29 +77,30 @@ func handleConnections(c echo.Context) error {
 		return err
 	}
 
-	// messageType, _, _ :=ws.ReadMessage()
-	// fmt.Println(messageType)
-
-	_, ok := clients[ws]
-	if !ok {
-		mu.Lock()
-		for _, msg := range MessageArchieve {
-			err := ws.WriteMessage(websocket.TextMessage, []byte(msg))
-				if err != nil {
-					log.Printf("error: %v", err)
-					ws.Close()
-				}
+	mu.Lock()
+	for _, msg := range MessageArchieve {
+		err := ws.WriteMessage(websocket.TextMessage, []byte(msg))
+		if err != nil {
+			log.Printf("error: %v", err)
+			ws.Close()
 		}
-		clients[ws] = true
-		mu.Unlock()
 	}
+	clients[ws] = true
+	mu.Unlock()
 
-	return nil
+	for {
+		_, msg, err := ws.ReadMessage()
+		if err != nil {
+			c.Logger().Error(err)
+			return err
+		}
+		fmt.Printf("%s\n", msg)
+	}
 }
 
 func handleMessages() {
 	mu := sync.Mutex{}
-	for msg := range Msg{
+	for msg := range Msg {
 		mu.Lock()
 		MessageArchieve = append(MessageArchieve, msg)
 		mu.Unlock()
@@ -120,7 +121,7 @@ func handleMessages() {
 func recieve(c echo.Context) error {
 	name := c.FormValue("name")
 	text := c.FormValue("text")
-	
+
 	Msg <- fmt.Sprintf("<div id=\"notifications\" hx-swap-oob=\"afterbegin\"><p><b>%s</b>: %s</p></div>", name, text)
 
 	return c.HTML(200, fmt.Sprintf(`

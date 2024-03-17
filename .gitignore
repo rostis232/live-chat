@@ -1,0 +1,6 @@
+.vscode
+.idea
+Makefile
+docker-compose.yml
+chat.dockerfile
+bin/

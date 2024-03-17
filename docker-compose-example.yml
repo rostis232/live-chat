@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+
+  chat:
+    build:
+      context: .
+      dockerfile: ./chat.dockerfile
+    restart: always
+    ports:
+      - "80:80"
+    deploy:
+      mode: replicated
+      replicas: 1

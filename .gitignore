@@ -4,3 +4,4 @@ Makefile
 docker-compose.yml
 chat.dockerfile
 bin/
+index-test.html

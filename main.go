@@ -53,6 +53,18 @@ func clear(c echo.Context) error {
 		MessageArchieve = []string{}
 		mu.Unlock()
 		fmt.Println("Chat cleared")
+
+		mu.Lock()
+		for client := range clients {
+			err := client.WriteMessage(websocket.TextMessage, []byte(`<div id="chat_room" hx-swap-oob="morphdom"><div class="col fixed-height-block p-3" id="notifications"></div></div>`))
+			if err != nil {
+				log.Printf("error: %v", err)
+				client.Close()
+				delete(clients, client)
+			}
+		}
+		mu.Unlock()
+
 		return c.HTML(200, "Успішно!")
 	} else {
 		return c.HTML(200, "Не успішно!")

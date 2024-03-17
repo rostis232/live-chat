@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"sync"
-	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
@@ -78,8 +77,6 @@ func handleConnections(c echo.Context) error {
 		return err
 	}
 
-	defer ws.Close()
-
 	mu.Lock()
 	for _, msg := range MessageArchieve {
 		err := ws.WriteMessage(websocket.TextMessage, []byte(msg))
@@ -94,15 +91,7 @@ func handleConnections(c echo.Context) error {
 	clients[ws] = true
 	mu.Unlock()
 
-	for {
-		time.Sleep(30 *time.Second)
-		mu.Lock()
-		available, ok := clients[ws]
-		mu.Unlock()
-		if !available || !ok {
-			return nil
-		}
-	}
+	return nil
 }
 
 func handleMessages() {

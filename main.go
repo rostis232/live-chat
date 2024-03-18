@@ -130,16 +130,19 @@ func recieve(c echo.Context) error {
 	Msg <- Message{Time: currentTime, Name: name, Text: text}
 
 	return c.HTML(200, fmt.Sprintf(`
-        <div class="input-group border-right-0">
-            <input type="text" name="name" id="name" class="form-control col-1 border-right-0" placeholder="Ім'я" value="%s" hidden required><br>
-            <textarea type="text" name="text" id="text" class="form-control border-right-0 emoji-picker" placeholder="Напишіть щось..." required></textarea><br>
-			<button type="button" class="btn border-right-0 btn-outline-primary picker">
-                    <i class="fa-solid fa-face-smile"></i>
-                </button>
-            <button type="submit" class="btn border-right-0 btn-outline-primary">
-				<i class="fa-solid fa-paper-plane"></i>
-            </button>
-        </div>
+	<div class="input-group input-group-sm border-right-0">
+	<input type="text" name="name" id="name" class="form-control col-1 border-right-0" placeholder="Ваше ім'я" value="%s" hidden required>
+</div>
+<div class="input-group input-group-sm border-right-0">
+	<textarea type="text" name="text" id="text" class="form-control border-right-0" placeholder="напишіть щось..." required></textarea><br>
+</div>
+<div class="d-grid gap-2 d-md-flex justify-content-md-end p-1">
+	<button type="submit" class="btn btn-sm border-right-0 btn-primary">
+		<span class="icon text-white">
+			<i class="fa fa-paper-plane"> Відправити</i>
+		</span>
+	</button>
+</div>
 	`, name))
 }
 
@@ -155,7 +158,7 @@ func main() {
 	e.Use(middleware.CORS())
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
-	e.Static("/", "../public")
+	e.Static("/", "./static")
 	e.GET("/", home)
 	e.GET("/ws", handleConnections)
 	e.POST("/send", recieve)

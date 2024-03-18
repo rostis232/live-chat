@@ -29,16 +29,17 @@
           overflow-y: auto; /* Додавання вертикального повзунка у випадку перевищення висоти */
         }
     </style>
-    <form hx-post="http://localhost:1323/send" class="border-start-0">
+    <form hx-post="http://localhost:1323/send" class="border-start-0 m-0">
         <div class="input-group input-group-sm border-right-0">
-            <input type="text" name="name" id="name" class="form-control col-1 border-right-0" placeholder="Name" required>
+            <input type="text" name="name" id="name" class="form-control col-1 border-right-0" placeholder="Ваше ім'я" required>
         </div>
         <div class="input-group input-group-sm border-right-0">
-            <textarea type="text" name="text" id="text" class="form-control border-right-0" placeholder="Text" required></textarea><br>
+            <textarea type="text" name="text" id="text" class="form-control border-right-0" placeholder="Напишіть щось..." required></textarea><br>
         </div>
-            <button type="submit" class="btn border-right-0 btn-outline-primary">
-                <span class="icon text-white-50">
-                    <i class="fas fa-trash"></i>
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end p-1">
+            <button type="submit" class="btn btn-sm border-right-0 btn-primary">
+                <span class="icon text-white">
+                    <i class="fa fa-paper-plane"> Відправити</i>
                 </span>
             </button>
         </div>

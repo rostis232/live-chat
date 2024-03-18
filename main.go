@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
@@ -22,11 +23,17 @@ type ChatMessage struct {
 	ChatText string `json:"chat_message"`
 }
 
+type Message struct{
+	Time string
+	Name string
+	Text string
+}
+
 var clients = make(map[*websocket.Conn]bool)
 
-var Msg = make(chan string)
+var Msg = make(chan Message)
 
-var MessageArchieve []string
+var MessageArchieve []Message
 
 var GeneralPass string
 
@@ -38,7 +45,7 @@ func home(c echo.Context) error {
 	<input type="text" name="pass" id="pass" class="form-control" placeholder="Password" required><br>
 	</div>
 	<button type="submit" class="btn btn-primary btn-user btn-block">
-	>>
+	Очистити чат
 	</button>
 	</div>
 	</form>`)
@@ -49,7 +56,7 @@ func clear(c echo.Context) error {
 	pass := c.FormValue("pass")
 	if pass == GeneralPass {
 		mu.Lock()
-		MessageArchieve = []string{}
+		MessageArchieve = []Message{}
 		mu.Unlock()
 		fmt.Println("Chat cleared")
 
@@ -82,7 +89,7 @@ func handleConnections(c echo.Context) error {
 	if !ok {
 		mu.Lock()
 		for _, msg := range MessageArchieve {
-			err := ws.WriteMessage(websocket.TextMessage, []byte(msg))
+			err := ws.WriteMessage(websocket.TextMessage, []byte(addHTML(msg)))
 			if err != nil {
 				log.Printf("error: %v", err)
 				ws.Close()
@@ -103,7 +110,7 @@ func handleMessages() {
 		// Send it out to every client that is currently connected
 		mu.Lock()
 		for client := range clients {
-			err := client.WriteMessage(websocket.TextMessage, []byte(msg))
+			err := client.WriteMessage(websocket.TextMessage, []byte(addHTML(msg)))
 			if err != nil {
 				log.Printf("error: %v", err)
 				client.Close()
@@ -118,7 +125,9 @@ func recieve(c echo.Context) error {
 	name := c.FormValue("name")
 	text := c.FormValue("text")
 
-	Msg <- fmt.Sprintf("<div id=\"notifications\" hx-swap-oob=\"afterbegin\"><p><b>%s</b>: %s</p></div>", name, text)
+	currentTime := time.Now().Format("02.01.2006 15:04:05")
+
+	Msg <- Message{Time: currentTime, Name: name, Text: text}
 
 	return c.HTML(200, fmt.Sprintf(`
         <div class="input-group border-right-0">
@@ -129,6 +138,10 @@ func recieve(c echo.Context) error {
             </button>
         </div>
 	`, name))
+}
+
+func addHTML(message Message) string {
+	return fmt.Sprintf("<div id=\"notifications\" hx-swap-oob=\"afterbegin\"><p><small>%s</small><br><b>%s</b>: %s</p></div>", message.Time, message.Name, message.Text)
 }
 
 func main() {

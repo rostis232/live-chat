@@ -24,16 +24,17 @@ type ChatMessage struct {
 }
 
 type Message struct{
+	Chat string
 	Time string
 	Name string
 	Text string
 }
 
-var clients = make(map[*websocket.Conn]bool)
+var clients = make(map[string]map[*websocket.Conn]bool)
 
 var Msg = make(chan Message)
 
-var MessageArchieve []Message
+var MessageArchieve = (map[string][]Message{})
 
 var GeneralPass string
 
@@ -56,17 +57,21 @@ func clear(c echo.Context) error {
 	pass := c.FormValue("pass")
 	if pass == GeneralPass {
 		mu.Lock()
-		MessageArchieve = []Message{}
+		for chat, _ := range MessageArchieve{
+			delete(MessageArchieve, chat)
+		}
 		mu.Unlock()
 		fmt.Println("Chat cleared")
 
 		mu.Lock()
-		for client := range clients {
-			err := client.WriteMessage(websocket.TextMessage, []byte(`<div id="chat_room" hx-swap-oob="morphdom"><div class="col fixed-height-block p-3" id="notifications"></div></div>`))
-			if err != nil {
-				log.Printf("error: %v", err)
-				client.Close()
-				delete(clients, client)
+		for chat, chatClients := range clients {
+			for client := range chatClients {
+				err := client.WriteMessage(websocket.TextMessage, []byte(`<div id="chat_room" hx-swap-oob="morphdom"><div class="col fixed-height-block p-3" id="notifications"></div></div>`))
+				if err != nil {
+					log.Printf("error: %v", err)
+					client.Close()
+					delete(clients[chat], client)
+				}
 			}
 		}
 		mu.Unlock()
@@ -78,24 +83,32 @@ func clear(c echo.Context) error {
 }
 
 func handleConnections(c echo.Context) error {
+	id := c.Param("id")
+	fmt.Println("::::", id)
 	mu := sync.Mutex{}
 	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
 		return err
 	}
 
-	_, ok := clients[ws]
+	chatClients, ok := clients[id]
+
+	if !ok {
+		clients[id] = make(map[*websocket.Conn]bool)
+	}
+
+	_, ok = chatClients[ws]
 
 	if !ok {
 		mu.Lock()
-		for _, msg := range MessageArchieve {
+		for _, msg := range MessageArchieve[id] {
 			err := ws.WriteMessage(websocket.TextMessage, []byte(addHTML(msg)))
 			if err != nil {
 				log.Printf("error: %v", err)
 				ws.Close()
 			}
 		}
-		clients[ws] = true
+		clients[id][ws] = true
 		mu.Unlock()
 	}
 	return nil
@@ -105,16 +118,16 @@ func handleMessages() {
 	mu := sync.Mutex{}
 	for msg := range Msg {
 		mu.Lock()
-		MessageArchieve = append(MessageArchieve, msg)
+		MessageArchieve[msg.Chat] = append(MessageArchieve[msg.Chat], msg)
 		mu.Unlock()
 		// Send it out to every client that is currently connected
 		mu.Lock()
-		for client := range clients {
+		for client := range clients[msg.Chat] {
 			err := client.WriteMessage(websocket.TextMessage, []byte(addHTML(msg)))
 			if err != nil {
 				log.Printf("error: %v", err)
 				client.Close()
-				delete(clients, client)
+				delete(clients[msg.Chat], client)
 			}
 		}
 		mu.Unlock()
@@ -122,12 +135,13 @@ func handleMessages() {
 }
 
 func recieve(c echo.Context) error {
+	id := c.Param("id")
 	name := c.FormValue("name")
 	text := c.FormValue("text")
 
 	currentTime := time.Now().Format("15:04:05")
 
-	Msg <- Message{Time: currentTime, Name: name, Text: text}
+	Msg <- Message{Chat: id, Time: currentTime, Name: name, Text: text}
 
 	return c.HTML(200, fmt.Sprintf(`
 	<div class="input-group input-group-sm border-right-0">
@@ -160,8 +174,8 @@ func main() {
 	e.Use(middleware.Recover())
 	e.Static("/", "./static")
 	e.GET("/", home)
-	e.GET("/ws", handleConnections)
-	e.POST("/send", recieve)
+	e.GET("/ws/:id", handleConnections)
+	e.POST("/send/:id", recieve)
 	e.POST("/clear", clear)
 	go handleMessages()
 	e.Logger.Fatal(e.Start(fmt.Sprintf(":%s", port)))

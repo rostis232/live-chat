@@ -132,7 +132,10 @@ func recieve(c echo.Context) error {
 	return c.HTML(200, fmt.Sprintf(`
         <div class="input-group border-right-0">
             <input type="text" name="name" id="name" class="form-control col-1 border-right-0" placeholder="Ім'я" value="%s" hidden required><br>
-            <textarea type="text" name="text" id="text" class="form-control border-right-0" placeholder="Напишіть щось..." required></textarea><br>
+            <textarea type="text" name="text" id="text" class="form-control border-right-0 emoji-picker" placeholder="Напишіть щось..." required></textarea><br>
+			<button type="button" class="btn border-right-0 btn-outline-primary picker">
+                    <i class="fa-solid fa-face-smile"></i>
+                </button>
             <button type="submit" class="btn border-right-0 btn-outline-primary">
 				<i class="fa-solid fa-paper-plane"></i>
             </button>

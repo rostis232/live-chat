@@ -22,6 +22,39 @@
             errorMessageElement.style.display = 'none';
         });
     </script>
+    <script>
+        function timeSince(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            let interval = Math.floor(seconds / 86400);
+        
+            if (interval > 1) {
+                return interval + " дні назад";
+            }
+            interval = Math.floor(seconds / 3600);
+            if (interval > 1) {
+                return interval + " години назад";
+            }
+            interval = Math.floor(seconds / 60);
+            if (interval > 1) {
+                return interval + " хвилини назад";
+            }
+            return "Тільки що";
+        }
+        
+        function updateTimeSince() {
+            const dateElement = document.getElementById("date");
+            const dateString = dateElement.textContent;
+            const dateParts = dateString.split(/[\s.:]+/);
+            const date = new Date(dateParts[2], dateParts[1] - 1, dateParts[0], dateParts[3], dateParts[4], dateParts[5]);
+            dateElement.textContent = timeSince(date);
+        }
+        
+        // Оновлюємо час один раз при завантаженні сторінки
+        updateTimeSince();
+        
+        // Оновлюємо час кожну хвилину
+        setInterval(updateTimeSince, 60000);
+        </script>
     <style>
         /* Встановлення фіксованої висоти для блоку */
         .fixed-height-block {
@@ -30,12 +63,9 @@
         }
     </style>
     <form hx-post="http://localhost:1323/send" class="border-start-0">
-        <div class="input-group input-group-sm border-right-0">
-            <input type="text" name="name" id="name" class="form-control col-1 border-right-0" placeholder="Name" required>
-        </div>
-        <div class="input-group input-group-sm border-right-0">
-            <textarea type="text" name="text" id="text" class="form-control border-right-0" placeholder="Text" required></textarea><br>
-        </div>
+        <div class="input-group border-right-0">
+            <input type="text" name="name" id="name" class="form-control col-1 border-right-0" placeholder="Name" required><br>
+            <input type="text" name="text" id="text" class="form-control border-right-0" placeholder="Text" required><br>
             <button type="submit" class="btn border-right-0 btn-outline-primary">
                 <span class="icon text-white-50">
                     <i class="fas fa-trash"></i>

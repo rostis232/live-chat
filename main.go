@@ -125,14 +125,14 @@ func recieve(c echo.Context) error {
 	name := c.FormValue("name")
 	text := c.FormValue("text")
 
-	currentTime := time.Now().Format("02.01.2006 15:04:05")
+	currentTime := time.Now().Format("15:04:05")
 
 	Msg <- Message{Time: currentTime, Name: name, Text: text}
 
 	return c.HTML(200, fmt.Sprintf(`
         <div class="input-group border-right-0">
             <input type="text" name="name" id="name" class="form-control col-1 border-right-0" placeholder="Ім'я" value="%s" hidden required><br>
-            <input type="text" name="text" id="text" class="form-control border-right-0" placeholder="Напишіть щось..." required><br>
+            <textarea type="text" name="text" id="text" class="form-control border-right-0" placeholder="Напишіть щось..." required></textarea><br>
             <button type="submit" class="btn border-right-0 btn-outline-primary">
 				<i class="fa-solid fa-paper-plane"></i>
             </button>

@@ -139,7 +139,7 @@ func recieve(c echo.Context) error {
 	name := c.FormValue("name")
 	text := c.FormValue("text")
 
-	currentTime := time.Now().Format("15:04:05")
+	currentTime := time.Now().Format("15:04")
 
 	Msg <- Message{Chat: id, Time: currentTime, Name: name, Text: text}
 

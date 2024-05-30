@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
+	"strconv"
 	"sync"
 	"time"
 
@@ -19,11 +21,8 @@ var (
 	}
 )
 
-type ChatMessage struct {
-	ChatText string `json:"chat_message"`
-}
-
 type Message struct{
+	ID string
 	Chat string
 	Time string
 	Name string
@@ -38,6 +37,7 @@ var MessageArchieve = (map[string][]Message{})
 
 var GeneralPass string
 
+//хендлер який використовується для введення коду перед видаленням всіх повідомлень
 func home(c echo.Context) error {
 	return c.HTML(200, `
 	<form method="POST" action="/clear">
@@ -52,18 +52,21 @@ func home(c echo.Context) error {
 	</form>`)
 }
 
+//хендлер для очищення чату який видаляє всі повідомлення чату з архіву повідомлень, а потім відправляє клієнту і вигляді html пусте вікно для повідолмень
 func clear(c echo.Context) error {
 	mu := sync.Mutex{}
 	pass := c.FormValue("pass")
 	if pass == GeneralPass {
 		mu.Lock()
+		//deleting MessageArchieve (all chats)
 		for chat, _ := range MessageArchieve{
 			delete(MessageArchieve, chat)
 		}
 		mu.Unlock()
-		fmt.Println("Chat cleared")
 
 		mu.Lock()
+
+		//sends to all clients empty chat field
 		for chat, chatClients := range clients {
 			for client := range chatClients {
 				err := client.WriteMessage(websocket.TextMessage, []byte(`<div id="chat_room" hx-swap-oob="morphdom"><div class="col fixed-height-block p-3" id="notifications"></div></div>`))
@@ -82,9 +85,63 @@ func clear(c echo.Context) error {
 	}
 }
 
+func deleteMsg(c echo.Context) error {
+	chat := c.Param("chat")
+	msg := c.Param("msg")
+	mu := sync.Mutex{}
+	pass := c.FormValue("pass")
+	//TODO: implement pass
+	if pass == "" {
+		mu.Lock()
+		//deleting MessageArchieve (all chats)
+		for msgIdx, message := range MessageArchieve[chat]{
+			if message.ID == msg {
+				MessageArchieve[chat] = append(MessageArchieve[chat][:msgIdx], MessageArchieve[chat][msgIdx+1:]...)
+			}
+		}
+		mu.Unlock()
+
+		mu.Lock()
+
+		//sends to all clients empty chat field
+		for chat, chatClients := range clients {
+			for client := range chatClients {
+				err := client.WriteMessage(websocket.TextMessage, []byte(`<div id="chat_room" hx-swap-oob="morphdom"><div class="col fixed-height-block p-3" id="notifications"></div></div>`))
+				if err != nil {
+					log.Printf("error: %v", err)
+					client.Close()
+					delete(clients[chat], client)
+				}
+			}
+		}
+		mu.Unlock()
+
+		mu.Lock()
+		for client, admin := range clients[chat] {
+			for _, msg := range MessageArchieve[chat] {
+				var err error
+				if admin {
+					err = client.WriteMessage(websocket.TextMessage, []byte(addHTMLwithDeleteButton(msg)))
+				} else {
+					err = client.WriteMessage(websocket.TextMessage, []byte(addHTML(msg)))
+				}
+				if err != nil {
+					log.Printf("error: %v", err)
+					client.Close()
+				}
+			}
+		}
+		mu.Unlock()
+
+		return c.HTML(200, "Успішно!")
+	} else {
+		return c.HTML(200, "Не успішно!")
+	}
+}
+
+//хендлер для створення WS-зв'язку та відправлення клієнту всіх попередніх звернень
 func handleConnections(c echo.Context) error {
 	id := c.Param("id")
-	fmt.Println("::::", id)
 	mu := sync.Mutex{}
 	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
@@ -108,22 +165,63 @@ func handleConnections(c echo.Context) error {
 				ws.Close()
 			}
 		}
+		clients[id][ws] = false
+		mu.Unlock()
+	}
+	return nil
+}
+
+func handleConnectionsAdmin(c echo.Context) error {
+	id := c.Param("id")
+	mu := sync.Mutex{}
+	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
+	if err != nil {
+		return err
+	}
+
+	chatClients, ok := clients[id]
+
+	if !ok {
+		clients[id] = make(map[*websocket.Conn]bool)
+	}
+
+	_, ok = chatClients[ws]
+
+	if !ok {
+		mu.Lock()
+		for _, msg := range MessageArchieve[id] {
+			err := ws.WriteMessage(websocket.TextMessage, []byte(addHTMLwithDeleteButton(msg)))
+			if err != nil {
+				log.Printf("error: %v", err)
+				ws.Close()
+			}
+		}
 		clients[id][ws] = true
 		mu.Unlock()
 	}
 	return nil
 }
 
+//Функція яка запускається як горутина, отримує всі повідомлення, складає їх в архів повідомлень та надсилає всім учасникам відповідного чату
 func handleMessages() {
+	var messageNumber int
 	mu := sync.Mutex{}
 	for msg := range Msg {
 		mu.Lock()
+		msg.Text = wrapURLsWithAnchorTags(msg.Text)
+		msg.ID = strconv.Itoa(messageNumber)
+		messageNumber++
 		MessageArchieve[msg.Chat] = append(MessageArchieve[msg.Chat], msg)
 		mu.Unlock()
 		// Send it out to every client that is currently connected
 		mu.Lock()
-		for client := range clients[msg.Chat] {
-			err := client.WriteMessage(websocket.TextMessage, []byte(addHTML(msg)))
+		for client, admin := range clients[msg.Chat] {
+			var err error
+			if admin {
+				err = client.WriteMessage(websocket.TextMessage, []byte(addHTMLwithDeleteButton(msg)))
+			} else {
+				err = client.WriteMessage(websocket.TextMessage, []byte(addHTML(msg)))
+			}
 			if err != nil {
 				log.Printf("error: %v", err)
 				client.Close()
@@ -134,6 +232,7 @@ func handleMessages() {
 	}
 }
 
+//хендлер для отримання нових повідомлень
 func recieve(c echo.Context) error {
 	id := c.Param("id")
 	name := c.FormValue("name")
@@ -143,6 +242,7 @@ func recieve(c echo.Context) error {
 
 	Msg <- Message{Chat: id, Time: currentTime, Name: name, Text: text}
 
+	//html який повертається і замінює форму відправки повідомлення
 	return c.HTML(200, fmt.Sprintf(`
 	<div class="input-group input-group-sm border-right-0">
 	<input type="text" name="name" id="name" class="form-control col-1 border-right-0" placeholder="Ваше ім'я" value="%s" hidden required>
@@ -160,8 +260,27 @@ func recieve(c echo.Context) error {
 	`, name))
 }
 
+//Функція, яка з типу повідомлення створює html-розмітку, яка містить текст повідомлення, автора та час його створення
 func addHTML(message Message) string {
 	return fmt.Sprintf("<div id=\"notifications\" hx-swap-oob=\"afterbegin\"><p><small>%s</small><br><b>%s</b>: %s</p></div>", message.Time, message.Name, message.Text)
+}
+
+func addHTMLwithDeleteButton(message Message) string {
+	return fmt.Sprintf("<div id=\"notifications\" hx-swap-oob=\"afterbegin\"><p><small>%s</small><br><b>%s</b>: %s <small><a style=\"color:red;\" hx-post=\"https://livechatextension.pp.ua/delete/%s/%s\">del</a></small></p></div>", message.Time, message.Name, message.Text, message.Chat, message.ID)
+}
+
+//Функція для трансформації тексту у клікабельні посилання шляхом додавання html-тегу <a>
+func wrapURLsWithAnchorTags(text string) string {
+    // Регулярний вираз для виявлення URL
+    urlPattern := `https?://[^\s]+`
+    re := regexp.MustCompile(urlPattern)
+
+    // Заміна URL на HTML-тег <a>
+    result := re.ReplaceAllStringFunc(text, func(url string) string {
+        return fmt.Sprintf("<a href=\"%s\">%s</a>", url, url)
+    })
+
+    return result
 }
 
 func main() {
@@ -174,7 +293,9 @@ func main() {
 	e.Use(middleware.Recover())
 	e.Static("/", "./static")
 	e.GET("/", home)
+	e.POST("/delete/:chat/:msg", deleteMsg)
 	e.GET("/ws/:id", handleConnections)
+	e.GET("/wsadmin/:id", handleConnectionsAdmin)
 	e.POST("/send/:id", recieve)
 	e.POST("/clear", clear)
 	go handleMessages()

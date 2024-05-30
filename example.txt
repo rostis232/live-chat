@@ -1,0 +1,191 @@
+<div class="m-3 shadow rounded bg-light">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <script src="https://unpkg.com/htmx.org@1.9.11" integrity="sha384-0gxUXCCR8yv9FM2b+U3FDbsKthCI66oH5IA9fHppQq9DDMHuMauqq1ZHBpJxQ0J0" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.11/dist/ext/ws.js"></script>
+    <script src="https://kit.fontawesome.com/f7b7832cac.js" crossorigin="anonymous"></script>
+    <script>
+         var EmojiPopover=function(){"use strict";return class{constructor(t){this.opts=t;this.options=Object.assign({},{container:"body",button:".e-btn",targetElement:".e-input",emojiList:[],wrapClassName:"",wrapAnimationClassName:"anim-scale-in"},t),this.wrapClassName="emoji-wrap",this.wrapCount=document.querySelectorAll(".emoji-wrap").length+1,this.wrapCountClassName=`emoji-wrap-${this.wrapCount}`,this.init(),this.createButtonListener()}init(){const{emojiList:t,container:e,button:s,targetElement:i}=this.options,a=this.createEmojiContainer(),n=this.createEmojiList(t),o=this.createMask();a.appendChild(n),a.appendChild(o);const r=document.querySelector(i),{left:c,top:l,height:m}=r.getClientRects()[0];a.style.top=`${l+m+12}px`,a.style.left=`${c}px`;document.querySelector(e).appendChild(a)}createButtonListener(){const{button:t}=this.options;document.querySelector(t).addEventListener("click",(()=>this.toggle(!0)))}createEmojiContainer(){const{wrapAnimationClassName:t,wrapClassName:e}=this.options,s=document.createElement("div");return s.classList.add(this.wrapClassName),s.classList.add(this.wrapCountClassName),s.classList.add(t),""!==e&&s.classList.add(e),s}createEmojiList(t){const e=document.createElement("div");return e.classList.add("emoji-list"),t.forEach((t=>{const s=this.createEmojiItem(t);e.appendChild(s)})),e}createEmojiItem(t){const{value:e,label:s}=t,i=document.createElement("div");let a;var n;return n=e,new RegExp("http").test(n)?(a=document.createElement("img"),a.classList.add("emoji"),a.classList.add("emoji-img"),a.setAttribute("src",e)):(a=document.createElement("span"),a.classList.add("emoji"),a.classList.add("emoji-text"),a.innerText=e),i.classList.add("emoji-item"),i.appendChild(a),"string"==typeof s&&i.setAttribute("title",s),i}createMask(){const t=document.createElement("div");return t.classList.add("emoji-mask"),t.addEventListener("click",(()=>this.toggle(!1))),t}toggle(t){document.querySelector(`.${this.wrapCountClassName}`).style.display=t?"block":"none"}onSelect(t){const e=document.querySelectorAll(`.${this.wrapCountClassName} .emoji-item`),s=this;e.forEach((function(e){e.addEventListener("click",(function(e){const i=e.currentTarget;let a;a=i.children[0].classList.contains("emoji-img")?i.children[0].getAttribute("src"):i.innerText,s.toggle(!1),t(a)}))}))}}}();
+    </script>
+    <link href="https://livechatextension.pp.ua/emoji.css" rel="stylesheet">
+    <script>
+        var errorCount = 0;
+
+        document.addEventListener('htmx:wsError', function(event) {
+            errorCount++;
+            if (errorCount >= 5) {
+                var error = event.detail.error;
+                var errorMessageElement = document.getElementById('error-message');
+                errorMessageElement.textContent = 'Помилка чату: зачекайте або оновіть сторінку (' + error.message + ')';
+                errorMessageElement.style.display = 'block';
+            }
+        });
+
+        document.addEventListener('htmx:wsOpen', function(event) {
+            errorCount = 0;
+            var errorMessageElement = document.getElementById('error-message');
+            errorMessageElement.style.display = 'none';
+        });
+    </script>
+    <script>
+        document.addEventListener('htmx:beforeSend', function(event) {
+    document.getElementById('text').value = '';
+    document.getElementById('name').setAttribute('hidden', 'true');
+    });
+    </script>
+    <style>
+        .fixed-height-block {
+          height: 80vh; /* Максимальна висота екрану */
+          overflow-y: auto; /* Додавання вертикального повзунка у випадку перевищення висоти */
+        }
+    </style>
+
+    <p class="col pl-3" id="error-message" style="color: red; display: none;"></p>
+    <form hx-post="https://livechatextension.pp.ua/send/2" hx-swap="none" class="border-start-0 m-0">
+        <div class="input-group border-right-0">
+            <input type="text" name="name" id="name" class="form-control col-1 border-right-0" placeholder="Ваше ім'я" required>
+        </div>
+        <div class="input-group border-right-0">
+            <textarea type="text" name="text" id="text" class="form-control border-right-0 emoji-picker" placeholder="Напишіть щось..." required></textarea><br>
+            
+        </div>
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end p-1">
+            <button type="button" class="btn border-right-0 btn-danger picker">
+                <span class="icon text-white">
+                    <i class="fa fa-face-smile"></i>
+                </span>
+            </button>
+            <button type="submit" class="btn border-right-0 btn-danger">
+                <span class="icon text-white">
+                    <i class="fa fa-paper-plane"> </i> Відправити
+                </span>
+            </button>
+        </div>
+    </form>
+    <script>
+        const el = new EmojiPopover({
+    button: '.picker',
+    targetElement: '.emoji-picker',
+    emojiList: [
+            {
+              value: '👍',
+              label: 'Класс'
+            },
+            {
+              value: '🔥',
+              label: 'Вогонь'
+            },
+            {
+              value: '🤣',
+              label: 'Сміюсь до сліз'
+            },
+            {
+              value: '😃',
+              label: 'Великий сміх'
+            },
+            {
+              value: '😅',
+              label: 'Гіркий сміх'
+            },
+            {
+              value: '😆',
+              label: 'Похмуро сміється'
+            },
+            {
+              value: '😏',
+              label: 'Задоволений'
+            },
+            {
+              value: '😊',
+              label: 'Посмішка'
+            },
+            {
+              value: '😎',
+              label: 'Круто!'
+            },
+            {
+              value: '😍',
+              label: 'Вмираю від захоплення'
+            },
+            {
+              value: '🙂',
+              label: 'Ха-ха'
+            },
+            {
+              value: '🤩',
+              label: 'Дуже захоплено'
+            },
+            {
+              value: '🤔',
+              label: 'Подумки'
+            },
+            {
+              value: '🙄',
+              label: 'Зневажливий погляд'
+            },
+            {
+              value: '😜',
+              label: 'Лукавий'
+            },
+            {
+              value: '😲',
+              label: 'Застогнав'
+            },
+            {
+              value: '😭',
+              label: 'Плачу до сліз'
+            },
+            {
+              value: '🤯',
+              label: 'Вибух мозку'
+            },
+            {
+              value: '😰',
+              label: 'Холодний пот'
+            },
+            {
+              value: '😱',
+              label: 'Відлякало'
+            },
+            {
+              value: '🤪',
+              label: 'Безлад'
+            },
+            {
+              value: '😵',
+              label: 'Обморок'
+            },
+            {
+              value: '😡',
+              label: 'Гнів'
+            },
+            {
+              value: '🥳',
+              label: 'Привітання'
+            },
+            {
+              value: '🤫',
+              label: 'Ш-ш-ш'
+            },
+            {
+              value: '🐒',
+              label: 'Мавпа'
+            },
+            {
+              value: '🤭',
+              label: 'Посмішка без слів'
+            }
+          ]
+  
+  })
+  
+  el.onSelect(l => {
+  document.querySelector(".emoji-picker").value+=l
+  console.log(value);
+  })
+    </script>
+    <div hx-ext="ws" ws-connect="wss:livechatextension.pp.ua/ws/2">
+        <div class="col fixed-height-block" id="chat_room">
+            <div class="col fixed-height-block p-3" id="notifications"></div>
+        </div>
+    </div>
+</div>

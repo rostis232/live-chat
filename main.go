@@ -277,7 +277,7 @@ func wrapURLsWithAnchorTags(text string) string {
 
     // Заміна URL на HTML-тег <a>
     result := re.ReplaceAllStringFunc(text, func(url string) string {
-        return fmt.Sprintf("<a href=\"%s\">%s</a>", url, url)
+        return fmt.Sprintf("<a href=\"%s\" target=\"blank\">%s</a>", url, url)
     })
 
     return result

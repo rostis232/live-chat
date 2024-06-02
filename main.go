@@ -262,11 +262,11 @@ func recieve(c echo.Context) error {
 
 //Функція, яка з типу повідомлення створює html-розмітку, яка містить текст повідомлення, автора та час його створення
 func addHTML(message Message) string {
-	return fmt.Sprintf("<div id=\"notifications\" hx-swap-oob=\"afterbegin\"><p><small>%s</small><br><b>%s</b>: %s</p></div>", message.Time, message.Name, message.Text)
+	return fmt.Sprintf("<div id=\"notifications\" hx-swap-oob=\"afterbegin\" style=\"word-wrap: break-word;\"><p><small>%s</small><br><b>%s</b>: %s</p></div>", message.Time, message.Name, message.Text)
 }
 
 func addHTMLwithDeleteButton(message Message) string {
-	return fmt.Sprintf("<div id=\"notifications\" hx-swap-oob=\"afterbegin\"><p><small>%s</small><br><b>%s</b>: %s <small><a style=\"color:red;\" hx-post=\"https://livechatextension.pp.ua/delete/%s/%s\">del</a></small></p></div>", message.Time, message.Name, message.Text, message.Chat, message.ID)
+	return fmt.Sprintf("<div id=\"notifications\" hx-swap-oob=\"afterbegin\" style=\"word-wrap: break-word;\"><p><small>%s</small><br><b>%s</b>: %s <small><a style=\"color:red;\" hx-post=\"https://livechatextension.pp.ua/delete/%s/%s\">del</a></small></p></div>", message.Time, message.Name, message.Text, message.Chat, message.ID)
 }
 
 //Функція для трансформації тексту у клікабельні посилання шляхом додавання html-тегу <a>

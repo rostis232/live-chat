@@ -266,7 +266,7 @@ func addHTML(message Message) string {
 }
 
 func addHTMLwithDeleteButton(message Message) string {
-	return fmt.Sprintf("<div id=\"notifications\" hx-swap-oob=\"afterbegin\" style=\"word-wrap: break-word;\"><p style=\"word-wrap: break-word;\"><small>%s</small><br><b>%s</b>: %s <small><a style=\"color:red;\" hx-post=\"https://livechatextension.pp.ua/delete/%s/%s\">del</a></small></p></div>", message.Time, message.Name, message.Text, message.Chat, message.ID)
+	return fmt.Sprintf("<div id=\"notifications\" hx-swap-oob=\"afterbegin\" style=\"word-wrap: break-word;\"><p style=\"word-wrap: break-word;\"><small>%s <a style=\"color:red;\" hx-post=\"https://livechatextension.pp.ua/delete/%s/%s\">del</a></small><br><b>%s</b>: %s </p></div>", message.Time, message.Chat, message.ID, message.Name, message.Text)
 }
 
 //Функція для трансформації тексту у клікабельні посилання шляхом додавання html-тегу <a>
